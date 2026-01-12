@@ -1,6 +1,6 @@
 # Credit Payment Widget
 
-A lightweight, secure payment widget plugin by **[BlockBuilders](https://github.com/BlockBuilders-Tech)**.
+A lightweight, secure payment widget plugin by **[BlockBuilders](https://blockbuilders.ps/)**.
 
 ---
 
