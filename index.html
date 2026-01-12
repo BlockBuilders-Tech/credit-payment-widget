@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    #payment-widget {
+      width: 100%;
+      height: 100vh;
+    }
+
+    #payment-widget iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="payment-widget"></div>
+
+  <!-- <script src="./payment-widget.js"></script> -->
+   <script src="./dist/payment-widget.min.js"></script>
+  <script>
+    PaymentWidget.init({
+      containerId: 'payment-widget',
+      ereference: 'MDM2ODE0NjVATmc9PQ',
+      token: 'XYZ',
+      lang: 'en',
+      width: '100%',
+      height: '100vh'
+    });
+  </script>
+</body>
+</html>
