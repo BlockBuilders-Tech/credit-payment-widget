@@ -33,13 +33,16 @@
   <div id="payment-widget"></div>
 
   <!-- <script src="./payment-widget.js"></script> -->
-   <script src="./dist/payment-widget.min.js"></script>
-  <script>
+<!-- <script src="https://cdn.jsdelivr.net/gh/BlockBuilders-Tech/credit-payment-widget@main/dist/payment-widget.min.js"></script><script> -->
+
+  <script src="./dist/payment-widget.min.js"></script><script>
+
     PaymentWidget.init({
       containerId: 'payment-widget',
-      ereference: 'MDM2ODE0NjVATmc9PQ',
+      ereference: 'NjM1ODE2NDNATmc9PQ',
       token: 'XYZ',
       lang: 'en',
+      url:"" ,// this one is missing  
       width: '100%',
       height: '100vh'
     });
