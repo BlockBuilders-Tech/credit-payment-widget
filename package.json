@@ -3,7 +3,7 @@
 
 {
   "name": "payment-widget",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Payment Widget Plugin",
   "main": "dist/payment-widget.min.js",
   "scripts": {
