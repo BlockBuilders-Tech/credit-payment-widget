@@ -1,32 +1,6 @@
-//
-//
-//
-//{
-//  "name": "payment-widget",
-//  "version": "1.0.3",
-//  "description": "Payment Widget Plugin",
-//  "main": "dist/payment-widget.min.js",
-//  "scripts": {
-//    "clean": "rm -rf dist/*",
-//    "minify": "uglifyjs src/payment-widget.js -o dist/payment-widget.uglified.js -c -m",
-//    "obfuscate": "javascript-obfuscator src/payment-widget.js --output dist/payment-widget.min.js --config obfuscator.config.json",
-//    "build": "npm run clean && npm run obfuscate",
-//    "build:windows": "del /Q dist\\* 2>nul & npm run obfuscate"
-//  },
-//  "keywords": ["payment", "widget"],
-//  "author": "Blockbuilders",
-//  "license": "UNLICENSED",
-//  "private": true,
-//  "devDependencies": {
-//    "javascript-obfuscator": "^4.0.0",
-//    "uglify-js": "^3.17.4"
-//  }
-//}
-
-
 {
   "name": "@blockbuilders/credit-payment-widget",
-  "version": "1.0.3",
+  "version": "1.0.9",
   "description": "Payment Widget Plugin",
   "main": "dist/payment-widget.min.js",
   "files": [
