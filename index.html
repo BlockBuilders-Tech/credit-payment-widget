@@ -1,51 +1,181 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Payment</title>
+  <title>Payment Widget — demo</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100%;
+      background: #f7f8fa;
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #0f172a;
     }
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
     }
 
-    #payment-widget {
-      width: 100%;
-      height: 100vh;
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .sub { font-size: 14px; color: #64748b; margin-bottom: 20px; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
     }
 
-    #payment-widget iframe {
-      width: 100%;
-      height: 100%;
+    .card h2 { font-size: 15px; margin-bottom: 10px; }
+
+    button {
+      font: inherit;
+      font-weight: 600;
       border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      background: #12a08f;
+      color: #fff;
+      cursor: pointer;
+    }
+    button.secondary { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; }
+
+    #payment-widget { width: 100%; min-height: 700px; }
+    #payment-widget iframe { width: 100%; height: 700px; border: none; border-radius: 12px; }
+
+    /* Result banner, shown only when we came back from the gateway. */
+    #result { display: none; border-inline-start: 4px solid #12a08f; }
+    #result.show { display: block; }
+    #result.cancel  { border-inline-start-color: #f7a600; }
+    #result.error   { border-inline-start-color: #dc2626; }
+    #result.pending { border-inline-start-color: #64748b; }
+
+    #result h2 { font-size: 17px; }
+    #result pre {
+      margin-top: 10px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
-  <div id="payment-widget"></div>
+<div class="wrap">
+  <h1>Payment Widget demo</h1>
+  <p class="sub">Embedded checkout, plus the redirect round-trip.</p>
 
-  <script src="https://cdn.jsdelivr.net/gh/BlockBuilders-Tech/credit-payment-widget@main/dist/payment-widget.min.js"></script>
-  <script>
-    PaymentWidget.init({
-      containerId: 'payment-widget',
-      ereference: '45153500',
-      token: 'eyJhbGciOiJIUzI1NiJ9.eyJwcmluY2lwYWwiOiJINHNJQUFBQUFBQUFBSlZUUVc4U1FSUWVrS1ltalcweHFZbUhlaEZ2WnNHV2xLUjRrTktWdEYxWUJGWWJUQ1REN25RN1pYWm5tWm1GNVdJNDZhR0hHcldKaVgraFwvMFF2XC9nQ2pCNjg5ZTNWMmdTNTZhWnpUNUgzZmZPKzk3NzI1dUFRTG5JRk5tMEZNdU9JUjM4YXV3ajJHWFpzajAyZFlqQlNmSTJZaEVURXFFZEdRRVRBNWlTUklhQ0NKTFFGdWF5ZHdBTE1FdW5aVzc1NGdVeFFEQmpZb3M2ZUtSd3c2YUVoWlQ3blNOaWxEZnlXSXBaUGJTYkRZQm1sb210UjNSWTI2YXVCaGhxdzJXSTFqR2pWN1lXak5sQWh5QllhRXoxTVhrUXU3QkZrYVdJSytPS1l5SzBaY2dKVkpzYjdBSk50RW9xaUJteDdrWEZiM1R5ZE5FWlllNG1HWnJ1eWdEMTZEVk9BbDVKSGVQUWlwU3FpamxDa2hzbXRNWFo0eFhJZGErQWlIeWFYK2VQMzl0N1BQWXlNSmdQVGs0ZlZ2NHZqZEhURCs4dXIzdmNqb2hDbkFuYm5TWTFveDhHUTE2Vmk1eFZDWStmdW4rb2Z6eTdjdmI4ak1JZVBwXC84OGpVNW82TnlwVHg0TU1Dam8zSXlrN1RNbDdTb3J2WEM4K204SklhV0xISTBodWxDdVFkWlVpRnBidHBoZ2xNNzhGU0RkMFRlMW91bjVnMUp1ZDUzdnFDeDVpeXdLc1JZamUyRlVibldxcFZxcW9WYlhXbXFFcmMrajhxNGxldmFIdkd1VldoQVFDUE01c3dNeWpYR2Fybjl1eThvZkRaXC92bGczeHVzOURYQm5sUEgrRERRZ0Y2bTBZOTIyc2JGZDRLcXZrOTJPZ1MwMlwvcnRpN0FMZWpoSjl5QlRQQmpHdnE5SEUwa1hDVkZvM0tSVG4rOSszcDJcLzRkc2J4OHNEQ0R4a1Z5STFaaFU4NTB1WW04dXp0ZVhQdjQ4amV5ZGZyWFVIeUNUV2dPdUF3QUEiLCJzdWIiOiJhcGlAc21hcnRzaG9wIiwicm9sZXMiOlsiUk9MRV9MT09LVVBTX1ZJRVciLCJST0xFX09SREVSX01BTkFHRU1FTlQiLCJST0xFX09SREVSX1ZJRVciLCJST0xFX1BST0RVQ1RfVklFVyJdLCJpc3MiOiJTcHJpbmcgU2VjdXJpdHkgUkVTVCBHcmFpbHMgUGx1Z2luIiwiZXhwIjoxNzc1NDc3NTQ0LCJpYXQiOjE3NzU0NzM5NDR9.fo4lYMHP2FQXmnjXwtYTnksQXySl1fYkRE_41eGzXEA',
-      url: 'https://185.57.122.58:2777/sign',
-      lang: 'en',
-      width: '100%',
-      height: '100vh'
-    });
-  </script>
+  <!-- Populated by handleReturn() when the gateway sends the payer back. -->
+  <div class="card" id="result">
+    <h2 id="result-title"></h2>
+    <div class="note" id="result-note"></div>
+    <pre id="result-json"></pre>
+    <p class="note">
+      This came from the query string, which the payer can edit. Before
+      releasing goods, look the payment up through your own API using
+      <code>reference</code>.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Redirect mode</h2>
+    <button id="pay-redirect">Pay with redirect</button>
+    <p class="note">
+      Leaves this page for the gateway and comes back to it. The banner above is
+      rendered by <code>handleReturn()</code> on the way back.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Embedded mode</h2>
+    <div id="payment-widget"></div>
+  </div>
+</div>
+
+<!--
+  The local build, so this demo exercises what you just changed. Pointing at
+  the CDN would serve the last *published* bundle instead, and any method added
+  since would be missing here:
+
+  <script src="https://cdn.jsdelivr.net/gh/BlockBuilders-Tech/credit-payment-widget@latest/dist/payment-widget.min.js"></script>
+-->
+<script src="dist/payment-widget.min.js"></script>
+<script>
+  // Replace with a live reference and token before running this.
+  var CONFIG = {
+    ereference: '45153500',
+    token: 'PASTE_A_FRESH_TOKEN',
+    url: 'https://apitest.qredit.tech'
+  };
+
+  // ── 1. Handle the way back ─────────────────────────────────────────
+  // Safe to call unconditionally: it returns null on a normal visit, so this
+  // runs before anything else and only renders when there is a result.
+  var COPY = {
+    success: ['Payment successful', 'The gateway reported a completed payment.'],
+    cancel:  ['Payment cancelled', 'The payer backed out before finishing.'],
+    error:   ['Payment failed',    'The payment did not go through.'],
+    pending: ['Awaiting settlement',
+              'Accepted, but the bank confirms later — this is not a failure. ' +
+              'e-SADAD and QR are completed in the payer\'s banking app.']
+  };
+
+  function render(result) {
+    var box = document.getElementById('result');
+    var copy = COPY[result.status] || ['Unknown status', result.status];
+
+    document.getElementById('result-title').textContent = copy[0];
+    document.getElementById('result-note').textContent = copy[1];
+    document.getElementById('result-json').textContent =
+      JSON.stringify(result, null, 2);
+
+    box.className = 'card show ' + result.status;
+  }
+
+  PaymentWidget.handleReturn({
+    onSuccess: render,
+    onCancel: render,
+    onFail: render,
+    onPending: render
+    // `clean` defaults to true, so the result parameters are stripped from the
+    // address bar. Refreshing then shows a clean page instead of re-firing.
+  });
+
+  // ── 2. Start a redirect payment ────────────────────────────────────
+  document.getElementById('pay-redirect').addEventListener('click', function () {
+    PaymentWidget.redirect(Object.assign({}, CONFIG, {
+      // Back to this same page, which is why handleReturn above renders the
+      // banner. In a real shop this is your order-confirmation page.
+      redirectUrl: window.location.origin + window.location.pathname,
+      lang: 'en'
+    }));
+  });
+
+  // ── 3. Embedded checkout ───────────────────────────────────────────
+  // Same callbacks as the redirect handler — that is the point of dispatching
+  // both modes through one path.
+  PaymentWidget.init(Object.assign({}, CONFIG, {
+    containerId: 'payment-widget',
+    lang: 'en',
+    height: '700px',
+    onLoad: function () { console.log('iframe ready'); },
+    onSuccess: render,
+    onCancel: render,
+    onFail: render,
+    onPending: render
+  }));
+</script>
 </body>
 </html>
