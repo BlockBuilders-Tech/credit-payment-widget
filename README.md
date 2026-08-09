@@ -90,55 +90,109 @@ without relying on JavaScript.
 
 ---
 
-## ↩️ Redirect Mode
+## 🔔 Callbacks
 
-```html
-<script src="https://cdn.jsdelivr.net/gh/BlockBuilders-Tech/credit-payment-widget@latest/dist/payment-widget.min.js"></script>
-<script>
-  document.getElementById('pay').addEventListener('click', function () {
-    PaymentWidget.redirect({
-      ereference: 'YOUR_REFERENCE',
-      token: 'YOUR_TOKEN',
-      url: 'https://your-api.example.com',
-      redirectUrl: 'https://your-shop.example.com/payment/complete',
-      lang: 'en'
-    });
-  });
-</script>
+Both modes report through the **same four callbacks**, so you write one set of
+handlers regardless of which you use:
+
+| Callback | Fires when |
+|---|---|
+| `onSuccess(result)` | Payment completed |
+| `onCancel(result)` | Payer backed out |
+| `onFail(result)` | Payment failed or was declined |
+| `onPending(result)` | Accepted, settling later (e-SADAD, QR) |
+| `onLoad()` | Embedded only — the iframe finished loading |
+| `onError(err)` | Embedded only — the iframe itself failed to load |
+
+Every `result` has the same shape:
+
+```js
+{
+  status:         'success' | 'cancel' | 'error' | 'pending',
+  reference:      '87253018',
+  orderReference: '9503319853',
+  transactionId:  '0602MCC603474',
+  amount:         '10.00',
+  currency:       'ILS',
+  message:        'Payment completed successfully',
+  timestamp:      '2026-08-09T15:32:41.000Z'
+}
 ```
 
-When the payment finishes, the gateway sends the browser to:
+`pending` is not a failure. e-SADAD and QR are completed in the payer's banking
+app, so the gateway reports what it knows and the bank confirms later — treat it
+as "awaiting settlement", not "declined".
+
+---
+
+## ↩️ How redirect mode works
+
+Three steps, and the middle one happens on the gateway.
+
+**1. Send the payer** — your page calls `redirect()`, the browser leaves your
+site:
+
+```javascript
+PaymentWidget.redirect({
+  ereference:  'YOUR_REFERENCE',
+  token:       'YOUR_TOKEN',
+  url:         'https://your-api.example.com',
+  redirectUrl: 'https://your-shop.example.com/payment/complete',
+  lang:        'en'
+});
+```
+
+**2. They pay** on the gateway — cards, Sadad Gate, e-SADAD or QR.
+
+**3. The gateway sends them back** to your `redirectUrl`, with the outcome
+appended:
 
 ```
 https://your-shop.example.com/payment/complete
-    ?status=success
-    &reference=87253018
-    &orderReference=9503319853
-    &transactionId=0602MCC603474
-    &amount=10.00
-    &currency=ILS
-    &message=Payment%20completed%20successfully
-    &timestamp=2026-07-28T15:32:41.000Z
+    ?status=success&reference=87253018&orderReference=9503319853
+    &transactionId=0602MCC603474&amount=10.00&currency=ILS
+    &message=Payment%20completed%20successfully&timestamp=2026-08-09T15:32:41.000Z
 ```
 
-`status` is one of `success` | `cancel` | `error` | `pending`.
-
-> ⚠️ **Verify server-side.** Query params are visible and editable by the user.
-> Treat them as a notification, not proof — look the payment up through your
-> API using `reference` before releasing goods.
-
-### `PaymentWidget.buildUrl(config)`
-
-Same arguments, but returns the URL instead of navigating — handy for
-rendering a real link or passing the URL to your backend.
+On that page, call `handleReturn` and you get the same callbacks as embedded
+mode:
 
 ```javascript
-const href = PaymentWidget.buildUrl({ /* …same config… */ });
-document.getElementById('pay').href = href;
+PaymentWidget.handleReturn({
+  onSuccess: r => showReceipt(r.reference, r.transactionId),
+  onCancel:  r => backToCart(),
+  onFail:    r => showError(r.message),
+  onPending: r => showAwaitingSettlement(r.reference)
+});
 ```
 
-`redirectUrl` may be relative (`'/payment/complete'`); it resolves against the
-current page. Non-`http(s)` schemes are rejected.
+It returns `null` when the URL carries no `status`, so it's safe to call on
+every page load — a normal visit just gets `null`.
+
+It also **strips the result parameters from the address bar** afterwards. Without
+that, a refresh re-fires your callbacks and the outcome sits in a URL that can be
+shared, bookmarked, or picked up by analytics. Pass `clean: false` to keep them.
+
+### Just reading the values
+
+```javascript
+const result = PaymentWidget.readResult();
+if (result && result.status === 'success') { /* … */ }
+```
+
+### Which mode to choose
+
+| | Embedded | Redirect |
+|---|---|---|
+| Payer stays on your page | ✅ | ❌ |
+| Result reaches your **server** | ❌ not directly | ✅ on the return URL |
+| Survives the tab closing mid-payment | ❌ | ✅ |
+| Works with strict CSP / no iframes | ❌ | ✅ |
+
+> ⚠️ **The query string is a notification, not proof.** It is visible and
+> editable by the payer. Before releasing goods, look the payment up through
+> your own API using `reference`. This applies to embedded mode too — a
+> postMessage is only as trustworthy as the page that sent it.
 
 ---
 
@@ -175,7 +229,24 @@ PaymentWidget.redirect({
 
 ### `PaymentWidget.buildUrl(config)`
 
-Build the redirect-mode URL without navigating.
+Build the redirect-mode URL without navigating — for rendering a real link, or
+handing the URL to your backend.
+
+### `PaymentWidget.handleReturn(config)`
+
+Read the result off the return URL and dispatch it to your callbacks. Returns
+the result, or `null` when there is none. Cleans the address bar unless you pass
+`clean: false`.
+
+### `PaymentWidget.readResult(options)`
+
+Return the result as a plain object without firing anything. `null` when the URL
+carries no `status`.
+
+### `PaymentWidget.clearResult()`
+
+Remove the gateway's parameters from the address bar, leaving your own intact.
+Uses `replaceState`, so the back button is unaffected.
 
 ### `PaymentWidget.destroy()`
 
