@@ -2,21 +2,29 @@
 
 **Widget version 1.2.0**
 
-After creating a payment request, launch the checkout on the client side in one
-of two modes.
+After creating a payment request, launch the checkout on the client side.
 
-| | Embedded | Redirect |
+**There is one integration mode: embedded.** The checkout runs in an iframe on
+your page, and reports the outcome to your callbacks. That does not change.
+
+`redirectUrl` is optional and answers exactly one question — **whose success
+screen the customer sees when the payment is done.**
+
+| | Without `redirectUrl` | With `redirectUrl` |
 |---|---|---|
-| Where checkout runs | an iframe on your page | a full page on our domain |
-| How you get the result | JavaScript callbacks | query parameters on your return URL |
-| Result is signed | **no** | **yes** |
-| Your page navigates away | no | yes |
+| Where checkout runs | iframe on your page | iframe on your page |
+| Callbacks fire | yes | yes |
+| At the end the customer sees | the gateway's receipt | **your page** |
+| Outcome on your URL, signed | — | yes |
 
-Pick redirect when the outcome must reach your **server**. Pick embedded when
-you want the customer to stay on your page and you are able to confirm the
-payment through our API afterwards.
+So adding `redirectUrl` is not switching modes. It replaces our success screen
+with yours, and puts the outcome on that page's URL, signed, so your server can
+verify it.
 
----
+The gateway does not follow the URL itself — it runs in the iframe, and going
+there from inside would load your success page in a frame. It hands the URL up
+and the widget navigates your page. You do not have to do anything for this;
+it is what `PaymentWidget.init` already does.
 
 ## 1. Script URL
 
@@ -72,6 +80,7 @@ pinned URL is what protects you from a change you did not plan for.
 | `ereference` | yes | Payment request reference |
 | `token` | yes | Merchant access token |
 | `url` | yes | Your **signing endpoint** — see §4 |
+| `redirectUrl` | no | Send the customer here when the payment finishes, instead of showing the gateway's receipt — see §3 |
 | `lang` | no | `en` (default) or `ar` |
 | `width` | no | iframe width, default `100%` |
 | `height` | no | iframe height, default `1000px` |
@@ -129,29 +138,34 @@ completed payment is never silently dropped.
 
 ---
 
-## 3. Redirect mode
+## 3. Sending the customer to your own success page
 
-The browser leaves your site, pays on our page, and comes back to your
-`redirectUrl` with the outcome — **signed** — on the query string.
+Add `redirectUrl` to the same `init` call. Nothing else changes.
 
 ```js
-PaymentWidget.redirect({
+PaymentWidget.init({
+  containerId: 'payment-widget',
   ereference:  'NjY1NzM3OTJATVRReQ',
   token:       'YOUR_ACCESS_TOKEN',
   url:         'https://merchant.example.com/api/sign-payment',
-  redirectUrl: 'https://shop.example.com/payment/return',
-  lang:        'en'
+  redirectUrl: '/payment/return',        // relative is fine
+
+  onSuccess: function (data) { /* still fires, just before we leave */ }
 });
 ```
+
+When the payment finishes, the widget tears the iframe down and navigates your
+page to `redirectUrl` with the outcome appended and signed. Your callbacks
+still fire first, so anything you need to record client-side still runs.
 
 On the page `redirectUrl` points at:
 
 ```js
-// Grab the verification payload BEFORE handleReturn — it cleans the URL.
+// Take the verification payload BEFORE handleReturn — it cleans the URL.
 var verification = PaymentWidget.getVerification();
 
 PaymentWidget.handleReturn({
-  onSuccess: function (data) { /* data.signature, data.signed also available */ },
+  onSuccess: function (data) { … },
   onCancel:  function (data) { … },
   onFail:    function (data) { … },
   onPending: function (data) { … }
@@ -170,11 +184,17 @@ if (verification) {
 refresh cannot re-fire your callbacks and the outcome does not sit in a URL the
 customer might share. Your own query parameters are left alone.
 
-If your app uses hash routing, include the hash in `redirectUrl`
-(`https://shop.example.com/#/payment/return`). We append the query **before**
-the fragment, so both `location.search` and your router work.
+If your app uses hash routing, include the hash (`/#/payment/return`). We append
+the query **before** the fragment, so both `location.search` and your router
+work.
 
----
+`redirectUrl` must be `http(s)`. A relative path is resolved against the page
+that called `init`. Anything else is rejected immediately, because the customer
+is handed to this value at the end of a payment.
+
+> `PaymentWidget.redirect()` and `buildUrl()` still exist for the older
+> full-page flow and are unchanged. New integrations do not need them — pass
+> `redirectUrl` to `init` instead.
 
 ## 4. Signatures — how they work
 
@@ -320,16 +340,17 @@ already happened, and stranding them protects nobody.
 as **untrusted** and fall back to the API lookup. Never accept an unsigned
 redirect just because it arrived.
 
-### Embedded mode is not signed
+### Callbacks are never signed — only the URL is
 
-The `postMessage` payload that reaches your embedded callbacks carries **no
-signature**, and it cannot: anyone with DevTools can call your `onSuccess`
-by hand.
+The `postMessage` payload that reaches your callbacks carries **no signature**,
+and it cannot: anyone with DevTools can call your `onSuccess` by hand.
 
-For embedded mode, browser callbacks are **UX only**. Confirm every payment
-server-side through our API by `reference` before fulfilling an order. This was
-always true; it is stated here explicitly because redirect mode now offers
-something stronger.
+The signature exists only on the `redirectUrl` you are sent to, which is why
+that is the one worth verifying. Without `redirectUrl` there is nothing signed
+to check, and your only verification is the API lookup.
+
+Either way, browser callbacks are **UX only**. Confirm every payment
+server-side by `reference` before fulfilling an order.
 
 ---
 
