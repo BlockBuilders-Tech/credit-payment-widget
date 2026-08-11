@@ -22,16 +22,11 @@ the end instead of the gateway's receipt — see
 ## Script URL
 
 ```html
-<script src="https://portaltest.qredit.tech/sdk/v1.2.0/payment-widget.min.js"></script>
-```
-
-Each release is also published to an unpinned path, which is updated in place:
-
-```html
 <script src="https://portaltest.qredit.tech/sdk/payment-widget.min.js"></script>
 ```
 
-Use the pinned URL in production.
+This path always serves the current version. Updates are published to it
+directly, so no change is needed on your side when a new version is released.
 
 ## Configuration fields
 
@@ -46,7 +41,6 @@ Use the pinned URL in production.
 | `width` | No | iframe width, default `100%` |
 | `height` | No | iframe height, default `1000px` |
 | `border` | No | iframe CSS border, default `none` |
-| `serverUrl` | No | Target a specific gateway deployment |
 | `onLoad` | No | Fires once when the iframe has finished loading |
 | `onSuccess` | No | Fires on successful payment |
 | `onCancel` | No | Fires when the customer cancels |
@@ -111,7 +105,7 @@ never grant value based on the callback alone.
 
 ```html
 <div id="payment-widget"></div>
-<script src="https://portaltest.qredit.tech/sdk/v1.2.0/payment-widget.min.js"></script>
+<script src="https://portaltest.qredit.tech/sdk/payment-widget.min.js"></script>
 <script>
   PaymentWidget.init({
     containerId: 'payment-widget',
@@ -334,7 +328,7 @@ to. Comparing the values against your own order record covers this.
 
 ## Upgrading from v1.0.9
 
-1. Update the script URL to the hosted path above.
+1. Update the script URL to the one above.
 2. If you were passing `reference`, rename it to `ereference`.
 3. Add the callbacks (`onSuccess`, `onCancel`, `onFail`, `onPending`) to handle
    the payment outcome.
