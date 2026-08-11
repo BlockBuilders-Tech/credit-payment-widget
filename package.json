@@ -1,6 +1,6 @@
 {
   "name": "@blockbuilders/credit-payment-widget",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Payment Widget Plugin",
   "main": "dist/payment-widget.min.js",
   "files": [
