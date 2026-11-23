@@ -362,7 +362,7 @@ console.log(PaymentWidget.version); // "1.0.0"
 The widget is served from our own infrastructure, alongside the gateway:
 
 ```html
-<script src="https://portaltest.qredit.tech/sdk/payment-widget.min.js"></script>
+<script src="https://portal.qredit.tech/sdk/payment-widget.min.js"></script>
 ```
 
 There is one live path and it always serves the current release — no version
